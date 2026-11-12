@@ -143,3 +143,33 @@ Multi-day events use the first listed date and the detail page's event times
 when available. Imported events are not published or overwritten on repeat
 runs; review drafts at `/admin/events` and use **Publish** when an event is
 ready to appear publicly.
+
+## Importing Monument 031 events
+
+The Monument 031 importer reads upcoming event pages from the calendar and
+uses their Schema.org data for event dates, descriptions, and ticket links.
+It stores events as drafts.
+
+1. Preview the import without database writes:
+
+   ```bash
+   npm run import:monument031
+   ```
+
+2. After reviewing the preview, import the listed events as drafts:
+
+   ```bash
+   npm run import:monument031:apply
+   ```
+
+Titles can be excluded using a comma-separated, case-insensitive list:
+
+```bash
+npm run import:monument031 -- --exclude=festival,quiz
+npm run import:monument031:apply -- --exclude=festival,quiz
+```
+
+The importer skips past/cancelled events and event pages already stored in the
+database. Imported events are not published or overwritten on repeat runs;
+review drafts at `/admin/events` and use **Publish** when an event is ready to
+appear publicly.

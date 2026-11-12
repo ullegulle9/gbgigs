@@ -10,7 +10,9 @@
     "import:pustervik": "node --env-file=.env.local scripts/import-pustervik.mjs",
     "import:pustervik:apply": "node --env-file=.env.local scripts/import-pustervik.mjs --apply",
     "import:oceanen": "node --env-file=.env.local scripts/import-oceanen.mjs",
-    "import:oceanen:apply": "node --env-file=.env.local scripts/import-oceanen.mjs --apply"
+    "import:oceanen:apply": "node --env-file=.env.local scripts/import-oceanen.mjs --apply",
+    "import:monument031": "node --env-file=.env.local scripts/import-monument031.mjs",
+    "import:monument031:apply": "node --env-file=.env.local scripts/import-monument031.mjs --apply"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
