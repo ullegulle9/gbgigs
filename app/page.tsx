@@ -1,60 +1,38 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
-import EventListItem from "@/app/components/event-list-item";
-import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import UpcomingEventList from "@/app/components/upcoming-event-list";
+import { getUpcomingEvents } from "@/lib/upcoming-events";
 
-async function UpcomingEvents() {
+type HomeSearchParams = Promise<{ page?: string | string[] }>;
+
+async function UpcomingEvents({
+  searchParams,
+}: {
+  searchParams: HomeSearchParams;
+}) {
+  const { page: pageParam } = await searchParams;
+  const page =
+    pageParam === undefined
+      ? 1
+      : typeof pageParam === "string" && /^[1-9]\d*$/.test(pageParam)
+        ? Number(pageParam)
+        : Number.NaN;
+
+  if (!Number.isSafeInteger(page) || page < 1) {
+    redirect("/");
+  }
+
   await connection();
-
-  const supabase = await createClient();
-  const { data: events, error: eventsError } = await supabase
-    .from("events")
-    .select(
-      "id,title,description,start_at,ticket_url,source_url,venue_id",
-    )
-    .eq("status", "published")
-    .gte("start_at", new Date().toISOString())
-    .order("start_at", { ascending: true })
-    .limit(100);
-
-  if (eventsError) {
-    throw new Error(`Unable to load upcoming events: ${eventsError.message}`);
+  const result = await getUpcomingEvents(page);
+  if (page > result.totalPages && result.totalPages > 0) {
+    redirect(result.totalPages === 1 ? "/" : `/?page=${result.totalPages}`);
   }
-
-  const venueIds = [...new Set(events.map((event) => event.venue_id))];
-  const { data: venues, error: venuesError } = venueIds.length
-    ? await supabase
-        .from("venues")
-        .select("id,name,address")
-        .in("id", venueIds)
-    : { data: [], error: null };
-
-  if (venuesError) {
-    throw new Error(`Unable to load event venues: ${venuesError.message}`);
+  if (page > 1 && result.totalPages === 0) {
+    redirect("/");
   }
-
-  const venueById = new Map(venues.map((venue) => [venue.id, venue]));
-  if (events.length === 0) {
-    return (
-      <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-12 text-center sm:px-10">
-        <p className="text-xl font-medium text-white">Nothing on the calendar yet.</p>
-        <p className="mt-2 text-sm text-slate-400">
-          Check back soon for upcoming gigs around Gothenburg.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <ol className="divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04]">
-      {events.map((event) => {
-        const venue = venueById.get(event.venue_id);
-
-        return <EventListItem event={event} key={event.id} venue={venue} />;
-      })}
-    </ol>
-  );
+  return <UpcomingEventList result={result} />;
 }
 
 function EventsLoading() {
@@ -66,7 +44,7 @@ function EventsLoading() {
   );
 }
 
-export default function Home() {
+export default function Home({ searchParams }: { searchParams: HomeSearchParams }) {
   return (
     <main className="min-h-screen bg-[#101512] font-sans text-white">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 sm:px-10">
@@ -121,7 +99,7 @@ export default function Home() {
           </span>
         </div>
         <Suspense fallback={<EventsLoading />}>
-          <UpcomingEvents />
+          <UpcomingEvents searchParams={searchParams} />
         </Suspense>
         <p className="mt-4 text-xs text-slate-500 sm:hidden">
           Times shown in Gothenburg local time
