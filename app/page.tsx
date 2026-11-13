@@ -3,16 +3,31 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import UpcomingEventList from "@/app/components/upcoming-event-list";
-import { getUpcomingEvents } from "@/lib/upcoming-events";
+import {
+  getUpcomingEvents,
+  getUpcomingEventsHref,
+  isValidEventDate,
+  type UpcomingEventFilters,
+} from "@/lib/upcoming-events";
 
-type HomeSearchParams = Promise<{ page?: string | string[] }>;
+type HomeSearchParams = Promise<{
+  page?: string | string[];
+  from?: string | string[];
+  to?: string | string[];
+  venue?: string | string[];
+}>;
 
 async function UpcomingEvents({
   searchParams,
 }: {
   searchParams: HomeSearchParams;
 }) {
-  const { page: pageParam } = await searchParams;
+  const {
+    page: pageParam,
+    from: fromParam,
+    to: toParam,
+    venue: venueParam,
+  } = await searchParams;
   const page =
     pageParam === undefined
       ? 1
@@ -24,15 +39,35 @@ async function UpcomingEvents({
     redirect("/");
   }
 
-  await connection();
-  const result = await getUpcomingEvents(page);
-  if (page > result.totalPages && result.totalPages > 0) {
-    redirect(result.totalPages === 1 ? "/" : `/?page=${result.totalPages}`);
-  }
-  if (page > 1 && result.totalPages === 0) {
+  if (
+    Array.isArray(fromParam) ||
+    Array.isArray(toParam) ||
+    Array.isArray(venueParam)
+  ) {
     redirect("/");
   }
-  return <UpcomingEventList result={result} />;
+  const filters: UpcomingEventFilters = {
+    from: fromParam || undefined,
+    to: toParam || undefined,
+    venue: venueParam || undefined,
+  };
+  if (
+    (filters.from && !isValidEventDate(filters.from)) ||
+    (filters.to && !isValidEventDate(filters.to)) ||
+    (filters.from && filters.to && filters.from > filters.to)
+  ) {
+    redirect("/");
+  }
+
+  await connection();
+  const result = await getUpcomingEvents(page, filters);
+  if (page > result.totalPages && result.totalPages > 0) {
+    redirect(getUpcomingEventsHref(result.totalPages, filters));
+  }
+  if (page > 1 && result.totalPages === 0) {
+    redirect(getUpcomingEventsHref(1, filters));
+  }
+  return <UpcomingEventList filters={filters} result={result} />;
 }
 
 function EventsLoading() {

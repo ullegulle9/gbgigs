@@ -2,6 +2,8 @@
 
 A Next.js app for maintaining and publishing upcoming concerts in Gothenburg.
 The app uses Supabase for Postgres storage and invite-only admin authentication.
+The public gig list can be filtered by date range and venue, and paginates
+matching events.
 
 ## Supabase setup
 
