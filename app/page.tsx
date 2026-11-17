@@ -24,7 +24,7 @@ async function UpcomingEvents({
 }) {
   const {
     page: pageParam,
-    from: fromParam      ,
+    from: fromPa ram      ,
     to: toParam,
     venue: venueParam,
   } = await searchParams;
