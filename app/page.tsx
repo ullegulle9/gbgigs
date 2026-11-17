@@ -24,7 +24,7 @@ async function UpcomingEvents({
 }) {
   const {
     page: pageParam,
-    from: fromParam,
+    from: fromParam      ,
     to: toParam,
     venue: venueParam,
   } = await searchParams;
@@ -33,7 +33,7 @@ async function UpcomingEvents({
       ? 1
       : typeof pageParam === "string" && /^[1-9]\d*$/.test(pageParam)
         ? Number(pageParam)
-        : Number.NaN;
+               : Number.NaN
 
   if (!Number.isSafeInteger(page) || page < 1) {
     redirect("/");
